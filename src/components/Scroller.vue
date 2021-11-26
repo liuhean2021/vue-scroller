@@ -26,7 +26,7 @@
 
       <slot></slot>
 
-      <div v-if="showInfiniteLayer" class="loading-layer">
+      <div v-if="showInfiniteLayer && !paramControlLoadingState" class="loading-layer">
         <span class="spinner-holder" :class="{'active': showLoading}">
           <slot name="infinite-spinner">
             <spinner :style="{fill: loadingLayerColor, stroke: loadingLayerColor}"></spinner>
@@ -34,8 +34,17 @@
         </span>
 
         <div class="no-data-text"
-          :class="{'active': !showLoading && loadingState == 2}" :style="{color: loadingLayerColor}" 
+          :class="{'active': !showLoading && loadingState == 2}" :style="{color: loadingLayerColor}"
           v-text="noDataText">
+        </div>
+      </div>
+
+      <div v-if="showInfiniteLayer && paramControlLoadingState" class="loading-layer" style="visibility: visible!important;">
+        <span class="spinner-holder active" v-if="!noData">
+            <spinner :style="{fill: loadingLayerColor, stroke: loadingLayerColor}"></spinner>
+        </span>
+
+        <div class="no-data-text active" v-else :style="{color: loadingLayerColor}" v-text="noDataText">
         </div>
       </div>
     </div>
@@ -254,6 +263,21 @@
       minContentHeight: {
         type: Number,
         default: 0 // px
+      },
+      // 控制是否允许滑动，为了防止连续无限向上滑动导致加载失败
+      stopTouch: {
+        type: Boolean,
+        default: false
+      },
+      // 控制是否使用外部参数控制loading状态
+      paramControlLoadingState: {
+        type: Boolean,
+        default: false
+      },
+      // 当paramControlLoadingState为true时生效，控制是否结束loading效果
+      noData: {
+        type: Boolean,
+        default: false
       }
     },
 
@@ -267,7 +291,7 @@
       },
 
       showInfiniteLayer () {
-        let contentHeight = 0 
+        let contentHeight = 0
         this.content
           ? contentHeight = this.content.offsetHeight
           : void 666
@@ -293,7 +317,8 @@
         pullToRefreshLayer: undefined,
         mousedown: false,
         infiniteTimer: undefined,
-        resizeTimer: undefined
+        resizeTimer: undefined,
+        touchTimestamp: 0
       }
     },
 
@@ -345,8 +370,8 @@
         this.infiniteTimer = setInterval(() => {
           let {left, top, zoom} = this.scroller.getValues()
 
-          // 在 keep alive 中 deactivated 的组件长宽变为 0 
-          if (this.content.offsetHeight > 0 && 
+          // 在 keep alive 中 deactivated 的组件长宽变为 0
+          if (this.content.offsetHeight > 0 &&
             top + 60 > this.content.offsetHeight - this.container.clientHeight) {
             if (this.loadingState) return
             this.loadingState = 1
@@ -375,7 +400,7 @@
       }
 
       let { content_width, content_height } = contentSize()
-      
+
       this.resizeTimer = setInterval(() => {
         let {width, height} = contentSize()
         if (width !== content_width || height !== content_height) {
@@ -424,6 +449,13 @@
       },
 
       touchStart(e) {
+        const touchTimestamp = (new Date()).getTime();
+        if (this.stopTouch || touchTimestamp - this.touchTimestamp < 1000) {
+          // 限制1秒内不能连续滑动 或 传参控制是否允许滑动
+          return;
+        }
+        this.touchTimestamp = touchTimestamp;
+
         // Don't react if initial down happens on a form element
         if (e.target.tagName.match(/input|textarea|select/i)) {
           return
