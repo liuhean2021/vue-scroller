@@ -34,7 +34,7 @@ Vue.use(VueScroller)
 
 ## Webpack project by vue-cli
 
-https://github.com/wangdahoo/vue-scroller-demo
+github.com/liuhean2021/vue-scroller
 
 ## API
 
