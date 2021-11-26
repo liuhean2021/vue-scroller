@@ -12,13 +12,13 @@ In purpose of smooth scrolling, pull to refresh and infinite loading.
 ## How to use
 
 ```bash
-npm i vue-scroller -S
+npm i vue-scroller2 -S
 ```
 
 ```js
 /* ignore this if you include vue-scroller.js by <script> tag from a cdn, such as unpkg */
 import Vue from 'vue'
-import VueScroller from 'vue-scroller'
+import VueScroller from 'vue-scroller2'
 Vue.use(VueScroller)
 ```
 
